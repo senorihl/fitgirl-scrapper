@@ -125,7 +125,7 @@ process.on('SIGQUIT', signalHandler);
 
     if (csv) {
         csvFd = await open(resolve(process.cwd(), csv), append ? 'a' : 'w');
-        await writeFile(csvFd, '"' + ['id', 'url', 'title', 'updatedAt', 'genres'].join('","') + '"');
+        append || await writeFile(csvFd, '"' + ['id', 'url', 'title', 'updatedAt', 'genres'].join('","') + '"');
 
         onParsed.push(async (post) => {
             await writeFile(csvFd, EOL + '"' + [post.id, post.url, post.title,post.updatedAt?.toJSON() || null, ...(post.genres.length > 0 ? post.genres : ['N/A'])].join('","') + '"');
