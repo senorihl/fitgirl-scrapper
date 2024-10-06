@@ -12,11 +12,7 @@ export type SitemapUrl = {
 }
 
 export class Post {
-    private readonly _updatedAt: null | Date = null;
-    constructor(private _id: string, private _url: string, private _title: string, private _genres: string[] = [], updatedAt?: string | Date) {
-        this._updatedAt = !updatedAt ? null : (typeof updatedAt === 'string' ? new Date(updatedAt) : updatedAt)
-    }
-
+    constructor(private _id: string, private _url: string, private _title: string, private _genres: string[] = [], private _updatedAt: Date = null) {}
 
     get id(): string {
         return this._id;

@@ -10,6 +10,7 @@ import {parseCascadingSitemaps} from "./sitemap";
 
 program
     .option('-u, --url <url>', 'The fitgirl-repacks sitemap URL to use', 'https://fitgirl-repacks.site/sitemap_index.xml')
+    .option('-s, --since <timestamp>', 'The timestamp before anything will not be included, useful for refreshing data')
     .option('--json <output>', 'JSON file in which data will be written')
     .option('--csv <output>', 'CSV file in which data will be written')
     .option('--append', 'To append instead of creating/emptying the CSV file')
@@ -17,7 +18,10 @@ program
 
 program.parse();
 
-const {url, json, csv, append} = program.opts() as {url: string, json: string, csv: string, append: boolean};
+const {url, json, csv, append, since} = program.opts() as Partial<{url: string, json: string, csv: string, since: string, append: boolean}>;
+
+const notBefore = !since ? null : new Date(since);
+
 const onParsed: Array<(post: Post) => PromiseLike<void>> = [
     async (post) => {
         console.log(`${post}`)
@@ -45,6 +49,19 @@ const callback =  async ({loc, lastmod}, retry = false) => {
                 const id = article.getAttribute('id').startsWith('post-') ? article.getAttribute('id').substring(5) : null;
 
                 if (null === id) {
+                    console.log(chalk.grey(`Skipping post due to missing id`))
+                    continue;
+                }
+
+                lastmod = !lastmod ? null : new Date(lastmod);
+
+                if (notBefore !== null && lastmod === null) {
+                    console.log(chalk.grey(`Skipping post due to missing lastmod`))
+                    continue;
+                }
+
+                if (notBefore !== null && lastmod !== null && lastmod < notBefore) {
+                    console.log(chalk.grey(`Skipping post due to lastmod ${lastmod.toJSON()} < ${notBefore.toJSON()}`))
                     continue;
                 }
 
