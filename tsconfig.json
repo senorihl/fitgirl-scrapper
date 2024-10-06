@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "lib": ["DOM"],
+    "module": "esnext",
+    "moduleResolution": "Node",
+    "target": "ESNext"
+  },
+  "files": ["src/index.ts"]
+}
