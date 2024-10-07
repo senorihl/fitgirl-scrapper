@@ -35,7 +35,7 @@ export class Post {
     }
 
     public toString() {
-        return `Post<id=${this.id}, url=${this.url}, title=${this.title}, title=${this.updatedAt.toJSON()}>`
+        return `Post<id=${this.id.padEnd(6)}, lastmod=${this.updatedAt.toJSON()}, url=${this.url}>`
     }
 }
 

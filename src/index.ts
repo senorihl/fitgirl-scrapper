@@ -7,6 +7,7 @@ import {resolve} from "node:path";
 import process from "node:process";
 import {isSitemapIndex, isSitemapUrl, Post} from "./types";
 import {parseCascadingSitemaps} from "./sitemap";
+import slugify from "slugify";
 
 program
     .option('-u, --url <url>', 'The fitgirl-repacks sitemap URL to use', 'https://fitgirl-repacks.site/sitemap_index.xml')
@@ -53,20 +54,40 @@ const callback =  async ({loc, lastmod}, retry = false) => {
                     continue;
                 }
 
-                lastmod = !lastmod ? null : new Date(lastmod);
+                lastmod = root.querySelector('meta[property="article:modified_time"]')?.getAttribute('content')
+                    || root.querySelector('meta[property="article:published_time"]')?.getAttribute('content')
+                    || lastmod;
 
-                if (notBefore !== null && lastmod === null) {
-                    console.log(chalk.grey(`Skipping post due to missing lastmod`))
-                    continue;
-                }
+                lastmod = !lastmod ? null : new Date(lastmod);
 
                 if (notBefore !== null && lastmod !== null && lastmod < notBefore) {
                     console.log(chalk.grey(`Skipping post due to lastmod ${lastmod.toJSON()} < ${notBefore.toJSON()}`))
                     continue;
                 }
 
-                const title = article.querySelector('h1')?.textContent;
-                const url = article.querySelector('h1')?.querySelector('a') ? article.querySelector('h1').querySelector('a').getAttribute('href') : loc;
+                const type = article.querySelector('.cat-links')?.innerText || '';
+
+                if (slugify(type, {lower: true}).indexOf('lossless-repack') === -1) {
+                    console.log(chalk.grey(`Skipping post due to invalid type ${type}`))
+                    continue;
+                }
+
+                const h1 = article.querySelector('h1');
+
+                if (!h1) {
+                    console.log(chalk.grey(`Skipping post due to missing <h1>`))
+                    continue;
+                }
+
+                const page = root.querySelector('title').textContent.replace(/[\s\t\n\f\r\v]/g, " ").replace(/\s+/g, " ");
+                const title = h1.textContent.replace(/[\s\t\n\f\r\v]/g, " ").replace(/\s+/g, " ");
+
+                if (slugify(page).indexOf(slugify(title)) === -1) {
+                    console.log(chalk.grey(`Skipping post due to mismatch of page & article titles`));
+                    continue;
+                }
+
+                const url = h1.querySelector('a') ? h1.querySelector('a').getAttribute('href') : loc;
                 const genres = article.querySelectorAll('p')
                     .filter(p => p.textContent.indexOf('Genres/Tags') > -1)
                     .map(p => parse(p.innerHTML.split('Genres/Tags')[1]).querySelector('strong').textContent.split(',').map(e => e.trim()))
@@ -75,12 +96,16 @@ const callback =  async ({loc, lastmod}, retry = false) => {
                     }, []);
 
                 for (const parsedCallback of onParsed) {
-                    await parsedCallback(new Post(id, url, title, genres, lastmod));
+                    await parsedCallback(new Post(id, url, page.replace(/(\s-\s)?FitGirl\sRepacks/, '').trim(), genres, lastmod));
                 }
             }
         }
     } catch (e) {
-        if (!retry) await callback({loc, lastmod}, true);
+        try {
+            if (!retry) await callback({loc, lastmod}, true);
+        } catch (e) {
+            console.log(chalk.red(`Unable to fetch ${loc} after a retry due to`), e);
+        }
     }
 };
 
@@ -91,6 +116,16 @@ async function signalHandler(signal: NodeJS.Signals) {
         await writeFile(jsonFd, EOL + ']');
         console.log(chalk.grey('Closing JSON file'));
         await jsonFd.close();
+
+        if (append) {
+            console.log(chalk.grey('Fixing appended JSON file'));
+            const { replaceInFile } = await import('replace-in-file');
+            await replaceInFile({
+                files: resolve(process.cwd(), json),
+                from: /}\s]\[.*$/gm,
+                to: '},',
+            });
+        }
     }
     if (csv) {
         console.log(chalk.grey('Closing CSV file'));
@@ -107,7 +142,7 @@ process.on('SIGQUIT', signalHandler);
 
     if (json) {
         let count = 0;
-        jsonFd = await open(resolve(process.cwd(), json), 'w');
+        jsonFd = await open(resolve(process.cwd(), json), append ? 'a' : 'w');
         await writeFile(jsonFd, '[');
 
         onParsed.push(async (post) => {
@@ -133,7 +168,7 @@ process.on('SIGQUIT', signalHandler);
     }
 
     try {
-        await parseCascadingSitemaps(url, callback);
+        await parseCascadingSitemaps(url, callback, null, notBefore);
     } finally {
         signalHandler('SIGQUIT');
     }
