@@ -125,6 +125,11 @@ async function signalHandler(signal: NodeJS.Signals) {
                 from: /}\s*]\[.*$/gm,
                 to: '},',
             });
+            await replaceInFile({
+                files: resolve(process.cwd(), json),
+                from: /},(\s*].*)$/gm,
+                to: '}$1',
+            });
         }
     }
     if (csv) {
