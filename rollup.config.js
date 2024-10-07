@@ -1,4 +1,5 @@
 const typescript = require('@rollup/plugin-typescript');
+const shebang = require('rollup-plugin-add-shebang');
 
 module.exports = {
     input: 'src/index.ts',
@@ -6,6 +7,9 @@ module.exports = {
         dir: 'dist',
         format: 'cjs'
     },
-    plugins: [typescript()],
+    plugins: [
+        typescript(),
+        shebang({include: 'dist/index.js'})
+    ],
     external: [/node_modules/]
 };

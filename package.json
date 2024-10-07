@@ -24,6 +24,7 @@
     "fast-xml-parser": "^4.5.0",
     "node-html-parser": "^6.1.13",
     "replace-in-file": "^8.2.0",
+    "rollup-plugin-add-shebang": "^0.3.1",
     "slugify": "^1.6.6"
   }
 }
