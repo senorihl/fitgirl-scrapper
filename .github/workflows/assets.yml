@@ -16,7 +16,7 @@ jobs:
   update_db:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -27,29 +27,32 @@ jobs:
           cache: yarn
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Download a single artifact
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: db
-
       - name: Install, Build & Run
         run: |-
+          echo "::group::Install dependencies"
           yarn
+          echo "::endgroup::"
+          echo "::group::Build NodeJS command"
           yarn build
-          touch db/lastrun.txt
-          RUN_TIME="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          LAST_RUN_TIME=$(cat db/lastrun.txt | head -1)
-          echo "$RUN_TIME" > db/lastrun.txt
-          [ -z "${LAST_RUN_TIME}" ] && RUN_OPTS="" || RUN_OPTS="--since $LAST_RUN_TIME"
-          set -x
-          node dist/index.js --append --csv db/out.csv --json db/out.json $RUN_OPTS
+          echo "::endgroup::"
+          .github/scripts/update_db.sh --ci
 
-#      - name: Archive production artifacts
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: db
-#          path: |
-#            db/out.csv
-#            db/out.json
-#            db/lastrun.txt
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: db
+          path: |
+            db/out.csv
+            db/out.json
+            db/lastrun.txt
+
+      - name: Commit report
+        run: |
+          OLD_RUN_TIME=$(cat db/lastrun.txt | head -1 | sed 's/\r$//')
+          git config --global user.name 'Auto Update'
+          git config --global user.email 'senorihl@users.noreply.github.com'
+          git add db/lastrun.txt
+          git add db/out.csv
+          git add db/out.json
+          git commit -m "auto update on $OLD_RUN_TIME"
+          git push

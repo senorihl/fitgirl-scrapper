@@ -122,8 +122,13 @@ async function signalHandler(signal: NodeJS.Signals) {
             const { replaceInFile } = await import('replace-in-file');
             await replaceInFile({
                 files: resolve(process.cwd(), json),
-                from: /}\s]\[.*$/gm,
-                to: '},',
+                from: /\s]\[.*$/gm,
+                to: '',
+            });
+            await replaceInFile({
+                files: resolve(process.cwd(), json),
+                from: /},\s].*$/gm,
+                to: '}',
             });
         }
     }
