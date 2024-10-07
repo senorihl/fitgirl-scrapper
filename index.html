@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bulma.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>FG posts list</title>
+</head>
+<body>
+<main class="section">
+    <div class="container">
+        <h1 class="title">Fitgirl Repack list</h1>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="updated-time">Last update</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <output class="input" id="updated-time" type="text" disabled=""></output>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="title-search">Search by title</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" id="title-search" type="text" placeholder="e.g. Oblivion">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="genre-select">Search by genre</label>
+            </div>
+            <div class="field-body">
+                <div class="field is-narrow">
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="genre" id="genre-select">
+                                <option value="-">None</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="releases">
+                <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Genres</th>
+                    <th scope="col">Date</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bulma.js"></script>
+<script>
+    let prefers = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    let html = document.querySelector('html');
+    html.classList.add(prefers);
+    html.setAttribute('data-bs-theme', prefers);
+    $.ajax('https://raw.githubusercontent.com/senorihl/fitgirl-scrapper/refs/heads/main/db/lastrun.txt')
+        .done(function (response) { document.getElementById('updated-time').textContent = (new Date(("" + response).trim()).toLocaleString()) })
+    $(document).ready(function () {
+        $('#releases').DataTable({
+            layout: {
+                topEnd: null
+            },
+            paging: false,
+            ajax: {
+                url: "https://raw.githubusercontent.com/senorihl/fitgirl-scrapper/refs/heads/main/db/out.json",
+                dataSrc: '',
+            },
+            order: [[3, 'desc']],
+            columns: [
+                {data: 'id'},
+                {data: 'title', render(value, _, data) {
+                    console.log(data)
+                    return `<span class="icon-text">
+  <span>${value}</span>
+  <a href="${data.url}" target="_blank" rel="nofollow"><span class="icon">
+    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+  </span></a>
+</span>`;
+                }},
+                {data: 'genres'},
+                {data: 'updatedAt',type:'date', render: DataTable.render.datetime() },
+            ],
+            initComplete: function () {
+                let titleCol = this.api().column(1);
+                let input = document.getElementById('title-search');
+
+                input.addEventListener('keyup', function () {
+                    titleCol
+                        .search(input.value, {caseInsensitive: true})
+                        .draw();
+                });
+
+                let column = this.api().column(2);
+                // Create select element
+                let select = document.getElementById('genre-select');
+
+                // Apply listener for user change in value
+                select.addEventListener('change', function () {
+                    column
+                        .search(select.value === '' ? /^$/ : select.value, {
+                            caseInsensitive: true,
+                            exact: select.value === ''
+                        })
+                        .draw();
+                });
+
+                const list = []
+
+                column.data().each(
+                    function (d, j) {
+                        if (d.length > 0) {
+                            list.push.apply(list, d);
+                        }
+                    }
+                )
+
+                list
+                    .sort(function (a,b) {
+                        a = a.toLowerCase(), b = b.toLowerCase();
+                        if (a < b) {
+                            return -1;
+                        }
+                        if (a > b) {
+                            return 1;
+                        }
+                        return 0;
+                    })
+                    .filter(function (val, index, self) {
+                        return self.indexOf(val) === index;
+                    })
+                    .forEach(function (genre) {
+                        select.add(new Option(!genre ? 'N/A' : genre, genre));
+                    });
+            }
+        })
+    })
+</script>
+</body>
+</html>
