@@ -89,5 +89,5 @@ command "echo \"$NEW_RUN_TIME\" > db/lastrun.txt"
 ci_group_end
 
 ci_group "Run built executable"
-command "node dist/index.js --append --csv db/out.csv --json db/out.json"
+command "node dist/index.js --csv db/out.csv --json db/out.json"
 ci_group_end
