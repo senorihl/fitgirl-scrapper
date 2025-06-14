@@ -58,6 +58,23 @@
             </div>
         </div>
 
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="company-select">Search by company</label>
+            </div>
+            <div class="field-body">
+                <div class="field is-narrow">
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="company" id="company-select">
+                                <option value="-">None</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="table-container">
             <table id="releases">
                 <thead>
@@ -65,6 +82,7 @@
                     <th scope="col">#</th>
                     <th scope="col">Title</th>
                     <th scope="col">Genres</th>
+                    <th scope="col">Companies</th>
                     <th scope="col">Date</th>
                 </tr>
                 </thead>
@@ -94,11 +112,10 @@
                 url: "https://raw.githubusercontent.com/senorihl/fitgirl-scrapper/refs/heads/main/db/out.json",
                 dataSrc: '',
             },
-            order: [[3, 'desc']],
+            order: [[4, 'desc']],
             columns: [
                 {data: 'id'},
                 {data: 'title', render(value, _, data) {
-                    console.log(data)
                     return `<span class="icon-text">
   <span>${value}</span>
   <a href="${data.url}" target="_blank" rel="nofollow"><span class="icon">
@@ -107,6 +124,7 @@
 </span>`;
                 }},
                 {data: 'genres'},
+                {data: 'companies'},
                 {data: 'updatedAt',type:'date', render: DataTable.render.datetime() },
             ],
             initComplete: function () {
@@ -133,7 +151,49 @@
                         .draw();
                 });
 
-                const list = []
+                let list = [];
+
+                column.data().each(
+                    function (d, j) {
+                        if (d.length > 0) {
+                            list.push.apply(list, d);
+                        }
+                    }
+                )
+
+                list
+                    .sort(function (a,b) {
+                        a = a.toLowerCase(), b = b.toLowerCase();
+                        if (a < b) {
+                            return -1;
+                        }
+                        if (a > b) {
+                            return 1;
+                        }
+                        return 0;
+                    })
+                    .filter(function (val, index, self) {
+                        return self.indexOf(val) === index;
+                    })
+                    .forEach(function (genre) {
+                        select.add(new Option(!genre ? 'N/A' : genre, genre));
+                    });
+
+                column = this.api().column(3);
+                // Create select element
+                select = document.getElementById('company-select');
+
+                // Apply listener for user change in value
+                select.addEventListener('change', function () {
+                    column
+                        .search(select.value === '' ? /^$/ : select.value, {
+                            caseInsensitive: true,
+                            exact: select.value === ''
+                        })
+                        .draw();
+                });
+
+                list = []
 
                 column.data().each(
                     function (d, j) {
