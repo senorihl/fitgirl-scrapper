@@ -12,7 +12,7 @@ export type SitemapUrl = {
 }
 
 export class Post {
-    constructor(private _id: string, private _url: string, private _title: string, private _genres: string[] = [], private _updatedAt: Date = null) {}
+    constructor(private _id: string, private _url: string, private _title: string, private _genres: string[] = [], private _companies: string[] = [], private _updatedAt: Date = null) {}
 
     get id(): string {
         return this._id;
@@ -27,6 +27,10 @@ export class Post {
     }
 
     get genres(): string[] {
+        return this._genres;
+    }
+
+    get companies(): string[] {
         return this._genres;
     }
 

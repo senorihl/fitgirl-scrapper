@@ -69,7 +69,14 @@ process.on('SIGQUIT', signalHandler);
         await writeFile(jsonFd, '[');
 
         onParsed.push(async (post) => {
-            let str = EOL + "\t" + JSON.stringify({id: post.id, url: post.url, title: post.title, updatedAt: post.updatedAt?.toJSON() || null, genres: post.genres } );
+            let str = EOL + "\t" + JSON.stringify({
+                id: post.id,
+                url: post.url,
+                title: post.title,
+                updatedAt: post.updatedAt?.toJSON() || null,
+                genres: post.genres,
+                companies: post.companies,
+            } );
             if (count > 0) {
                 str = "," + str;
             }
@@ -86,7 +93,13 @@ process.on('SIGQUIT', signalHandler);
         append || await writeFile(csvFd, '"' + ['id', 'url', 'title', 'updatedAt', 'genres'].join('","') + '"');
 
         onParsed.push(async (post) => {
-            await writeFile(csvFd, EOL + '"' + [post.id, post.url, post.title,post.updatedAt?.toJSON() || null, ...(post.genres.length > 0 ? post.genres : ['N/A'])].join('","') + '"');
+            await writeFile(csvFd, EOL + '"' + [
+                post.id,
+                post.url,
+                post.title,
+                post.updatedAt?.toJSON() || null,
+                ...(post.genres.length > 0 ? post.genres : ['N/A'])
+            ].join('","') + '"');
         })
     }
 

@@ -39,13 +39,19 @@ export async function parseConsecutivePage(url: string, onPost: (post: Post) => 
         const title = h1.textContent.replace(/[\s\t\n\f\r\v]/g, " ").replace(/\s+/g, " ");;
         const url = h1.querySelector('a').getAttribute('href');
         const genres = article.querySelectorAll('p')
-            .filter(p => p.textContent.indexOf('Genres/Tags') > -1)
-            .map(p => parse(p.innerHTML.split('Genres/Tags')[1]).querySelector('strong').textContent.split(',').map(e => e.trim()))
+            .filter(p => p.textContent.indexOf('Genres/Tags:') > -1)
+            .map(p => parse(p.innerHTML.split('Genres/Tags:')[1].split('<br')[0]).textContent.split(',').map(e => e.trim()))
+            .reduce((previousValue, currentValue) => {
+                return [...previousValue, ...currentValue];
+            }, []);
+        const companies = article.querySelectorAll('p')
+            .filter(p => p.textContent.indexOf('Companies:') > -1)
+            .map(p => parse(p.innerHTML.split('Companies:')[1].split('<br')[0]).textContent.split(',').map(e => e.trim()))
             .reduce((previousValue, currentValue) => {
                 return [...previousValue, ...currentValue];
             }, []);
 
-        await onPost(new Post(id, url, title.trim(), genres, lastmod));
+        await onPost(new Post(id, url, title.trim(), genres, companies, lastmod));
     }
 
     if (!tooOld && root.querySelector('link[rel="next"]')) {
