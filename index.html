@@ -137,89 +137,52 @@
                         .draw();
                 });
 
-                let column = this.api().column(2);
-                // Create select element
-                let select = document.getElementById('genre-select');
-
-                // Apply listener for user change in value
-                select.addEventListener('change', function () {
-                    column
-                        .search(select.value === '' ? /^$/ : select.value, {
-                            caseInsensitive: true,
-                            exact: select.value === ''
-                        })
-                        .draw();
-                });
-
-                let list = [];
-
-                column.data().each(
-                    function (d, j) {
-                        if (d.length > 0) {
-                            list.push.apply(list, d);
-                        }
-                    }
-                )
-
-                list
-                    .sort(function (a,b) {
-                        a = a.toLowerCase(), b = b.toLowerCase();
-                        if (a < b) {
-                            return -1;
-                        }
-                        if (a > b) {
-                            return 1;
-                        }
-                        return 0;
-                    })
-                    .filter(function (val, index, self) {
-                        return self.indexOf(val) === index;
-                    })
-                    .forEach(function (genre) {
-                        select.add(new Option(!genre ? 'N/A' : genre, genre));
+                /**
+                 * @param column
+                 * @param {HTMLSelectElement} $select
+                 */
+                function selectable(column, $select) {
+                    // Apply listener for user change in value
+                    $select.addEventListener('change', function () {
+                        column
+                            .search($select.value === '' ? /^$/ : $select.value, {
+                                caseInsensitive: true,
+                                exact: $select.value === ''
+                            })
+                            .draw();
                     });
 
-                column = this.api().column(3);
-                // Create select element
-                select = document.getElementById('company-select');
+                    const list = [];
 
-                // Apply listener for user change in value
-                select.addEventListener('change', function () {
-                    column
-                        .search(select.value === '' ? /^$/ : select.value, {
-                            caseInsensitive: true,
-                            exact: select.value === ''
+                    column.data().each(
+                        function (d, j) {
+                            if (d.length > 0) {
+                                list.push.apply(list, d);
+                            }
+                        }
+                    )
+
+                    list
+                        .sort(function (a,b) {
+                            a = a.toLowerCase(), b = b.toLowerCase();
+                            if (a < b) {
+                                return -1;
+                            }
+                            if (a > b) {
+                                return 1;
+                            }
+                            return 0;
                         })
-                        .draw();
-                });
+                        .filter(function (val, index, self) {
+                            return self.indexOf(val) === index;
+                        })
+                        .forEach(function (genre) {
+                            $select.add(new Option(!genre ? 'N/A' : genre, genre));
+                        });
+                }
 
-                list = []
-
-                column.data().each(
-                    function (d, j) {
-                        if (d.length > 0) {
-                            list.push.apply(list, d);
-                        }
-                    }
-                )
-
-                list
-                    .sort(function (a,b) {
-                        a = a.toLowerCase(), b = b.toLowerCase();
-                        if (a < b) {
-                            return -1;
-                        }
-                        if (a > b) {
-                            return 1;
-                        }
-                        return 0;
-                    })
-                    .filter(function (val, index, self) {
-                        return self.indexOf(val) === index;
-                    })
-                    .forEach(function (genre) {
-                        select.add(new Option(!genre ? 'N/A' : genre, genre));
-                    });
+                selectable(this.api().column(2), document.getElementById('genre-select'));
+                selectable(this.api().column(3), document.getElementById('company-select'));
             }
         })
     })
