@@ -31,7 +31,7 @@ export class Post {
     }
 
     get companies(): string[] {
-        return this._genres;
+        return this._companies;
     }
 
     get updatedAt(): Date {
